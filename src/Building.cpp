@@ -34,11 +34,6 @@ void Building::Update(float deltaTime)
         {
             resource.SetAmount(resource.GetAmount() - requiredAmount);
         }
-        else
-        {
-            m_efficiency *= (resource.GetAmount() / requiredAmount);
-            resource.SetAmount(0);
-        }
     }
 
     // Generate output resources

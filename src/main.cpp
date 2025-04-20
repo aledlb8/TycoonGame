@@ -93,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         try
         {
             // Try to load the custom font from the lib folder
-            g_font = io.Fonts->AddFontFromFileTTF("E:\\code\\TycoonGame\\lib\\HackNerdFont.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+            g_font = io.Fonts->AddFontFromFileTTF("lib/HackNerdFont.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
             IM_ASSERT(g_font != NULL);
             if (!g_font)
             {
