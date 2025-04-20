@@ -259,7 +259,7 @@ void TycoonGame::UpdateResources(float deltaTime)
             for (const auto &input : building->GetInputResources())
             {
                 m_player.resources[input.GetType()].SetAmount(
-                    m_player.resources[input.GetType()].GetAmount() - input.GetAmount());
+                m_player.resources[input.GetType()].GetAmount() - input.GetAmount());
             }
 
             // Produce output resources
@@ -267,7 +267,7 @@ void TycoonGame::UpdateResources(float deltaTime)
             for (const auto &output : building->GetOutputResources())
             {
                 m_player.resources[output.GetType()].SetAmount(
-                    m_player.resources[output.GetType()].GetAmount() + production);
+                m_player.resources[output.GetType()].GetAmount() + production);
                 m_player.resources[output.GetType()].SetOwned(true);
             }
         }
@@ -473,20 +473,21 @@ void TycoonGame::Render()
 
 void TycoonGame::RenderMainMenu()
 {
+    bool confirm_popup = false;
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Game"))
         {
             if (ImGui::MenuItem("New Game"))
             {
-                Initialize();
+                confirm_popup = true;
             }
             if (ImGui::MenuItem("Save Game"))
             {
                 if (SaveGame("savegame.dat")) {
                 }
             }
-            if (ImGui::MenuItem("Load Game"))
+            if (ImGui::MenuItem("Load Save"))
             {
                 if (LoadGame("savegame.dat")) {
                 }
@@ -518,6 +519,29 @@ void TycoonGame::RenderMainMenu()
         ImGui::Text("FPS: %.1f", m_fps);
 
         ImGui::EndMainMenuBar();
+    }
+    // Confirm New Game Popup
+    if (confirm_popup) {
+        ImGui::OpenPopup("Confirm New Game");
+    }
+    if (ImGui::BeginPopupModal("Confirm New Game", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Are you sure you want to create a new game?");
+        ImGui::Text("WARNING: Deletes current save!");
+
+        if (ImGui::Button("Confirm"))
+        {
+            std::remove("savegame.dat");
+            Initialize();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -713,11 +737,13 @@ void TycoonGame::RenderBuildingsWindow()
             // Maintenance cost
             ImGui::Text("Maintenance: $%.2f/s", building->GetMaintenanceCost());
 
-            // Upgrade button - use a unique ID for each button
-            std::string upgradeButtonId = "Upgrade ($" + std::to_string(static_cast<int>(building->GetUpgradeCost())) + ")##upgrade" + std::to_string(originalIndex);
-            if (ImGui::Button(upgradeButtonId.c_str()))
-            {
-                UpgradeBuilding(originalIndex);
+            // Upgrade button - use a unique ID for each button (show if has enough to upgrade & not max level; hardcoded to 5)
+            if (static_cast<int>(building->GetUpgradeCost()) < m_player.money && static_cast<int>(building->GetLevel())<5) {
+                std::string upgradeButtonId = "Upgrade ($" + std::to_string(static_cast<int>(building->GetUpgradeCost())) + ")##upgrade" + std::to_string(originalIndex);
+                if (ImGui::Button(upgradeButtonId.c_str()))
+                {
+                    UpgradeBuilding(originalIndex);
+                }
             }
 
             // Sell button - use a unique ID for each button

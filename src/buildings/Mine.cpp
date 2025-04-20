@@ -6,12 +6,12 @@ Mine::Mine()
                "Mine",
                500.0f,                                                                                    // cost
                0.3f,                                                                                      // base production rate
-               {Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false)}, // input resources
-               {Resource(ResourceType::STONE, "Stone", 0.0f, GameConstants::STONE_BASE_PRICE, false),
-                Resource(ResourceType::IRON, "Iron", 0.0f, GameConstants::IRON_BASE_PRICE, false)}, // output resources
-               GameConstants::MINE_MAINTENANCE,                                                     // maintenance cost
-               250.0f,                                                                              // upgrade cost
-               10)                                                                                  // required reputation
+               {Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false)}, // input resource
+               {Resource(ResourceType::STONE, "Stone", 0.0f, GameConstants::STONE_BASE_PRICE, false),     // output resource
+                Resource(ResourceType::IRON, "Iron", 0.0f, GameConstants::IRON_BASE_PRICE, false)},       // output resource
+               GameConstants::MINE_MAINTENANCE,                                                           // maintenance cost
+               250.0f,                                                                                    // upgrade cost
+               10)                                                                                        // required reputation
 {
 }
 
