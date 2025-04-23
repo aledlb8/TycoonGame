@@ -65,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // Create application window
         WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"Tycoon Game", nullptr};
         ::RegisterClassExW(&wc);
-        HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Tycoon Game", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
+        HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Tycoon Game", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, (GetSystemMetrics(SM_CXSCREEN)-1045)/2, (GetSystemMetrics(SM_CYSCREEN)-800)/2, 1045, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
         // Initialize Direct3D
         if (!CreateDeviceD3D(hwnd))

@@ -142,12 +142,18 @@
     <ClCompile Include="lib\imgui_widgets.cpp" />
     <ClCompile Include="src\Building.cpp" />
     <ClCompile Include="src\BuildingFactory.cpp" />
-    <ClCompile Include="src\buildings\CrystalMine.cpp" />
-    <ClCompile Include="src\buildings\Mine.cpp" />
-    <ClCompile Include="src\buildings\PowerPlant.cpp" />
-    <ClCompile Include="src\buildings\ResearchLab.cpp" />
-    <ClCompile Include="src\buildings\Woodcutter.cpp" />
+    <ClCompile Include="src\productionBuildings\Jewelry.cpp" />
+    <ClCompile Include="src\productionBuildings\Tools.cpp" />
+    <ClCompile Include="src\productionBuildings\Railroads.cpp" />
+    <ClCompile Include="src\productionBuildings\Furniture.cpp" />
+    <ClCompile Include="src\resourceBuildings\CrystalMine.cpp" />
+    <ClCompile Include="src\resourceBuildings\Mine.cpp" />
+    <ClCompile Include="src\resourceBuildings\PowerPlant.cpp" />
+    <ClCompile Include="src\resourceBuildings\ResearchLab.cpp" />
+    <ClCompile Include="src\resourceBuildings\Woodcutter.cpp" />
+    <ClCompile Include="src\resourceBuildings\DiamondMine.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Production.cpp" />
     <ClCompile Include="src\Resource.cpp" />
     <ClCompile Include="src\TycoonGame.cpp" />
   </ItemGroup>
@@ -162,12 +168,18 @@
     <ClInclude Include="lib\imstb_truetype.h" />
     <ClInclude Include="src\Building.h" />
     <ClInclude Include="src\BuildingFactory.h" />
-    <ClInclude Include="src\buildings\CrystalMine.h" />
-    <ClInclude Include="src\buildings\Mine.h" />
-    <ClInclude Include="src\buildings\PowerPlant.h" />
-    <ClInclude Include="src\buildings\ResearchLab.h" />
-    <ClInclude Include="src\buildings\Woodcutter.h" />
+    <ClInclude Include="src\productionBuildings\Jewelry.h" />
+    <ClInclude Include="src\productionBuildings\Tools.h" />
+    <ClInclude Include="src\productionBuildings\Railroads.h" />
+    <ClInclude Include="src\productionBuildings\Furniture.h" />
+    <ClInclude Include="src\resourceBuildings\CrystalMine.h" />
+    <ClInclude Include="src\resourceBuildings\Mine.h" />
+    <ClInclude Include="src\resourceBuildings\PowerPlant.h" />
+    <ClInclude Include="src\resourceBuildings\ResearchLab.h" />
+    <ClInclude Include="src\resourceBuildings\Woodcutter.h" />
+    <ClInclude Include="src\resourceBuildings\DiamondMine.h" />
     <ClInclude Include="src\GameConstants.h" />
+    <ClInclude Include="src\Production.h" />
     <ClInclude Include="src\Resource.h" />
     <ClInclude Include="src\TycoonGame.h" />
   </ItemGroup>

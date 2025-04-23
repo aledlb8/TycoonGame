@@ -34,3 +34,7 @@
 /.vs
 /Tycoon
 /x64
+*.ini
+*.dat
+*.pdb
+/.vscode
