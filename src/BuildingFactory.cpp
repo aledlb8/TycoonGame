@@ -4,6 +4,7 @@
 #include "resourceBuildings/CrystalMine.h"
 #include "resourceBuildings/PowerPlant.h"
 #include "resourceBuildings/ResearchLab.h"
+#include "resourceBuildings/DiamondMine.h"
 #include "productionBuildings/Furniture.h"
 #include "productionBuildings/Tools.h"
 #include "productionBuildings/Railroads.h"
@@ -25,6 +26,8 @@ std::unique_ptr<Building> BuildingFactory::CreateBuilding(BuildingType type)
         return std::make_unique<CrystalMine>();
     case BuildingType::RESEARCH_LAB:
         return std::make_unique<ResearchLab>();
+    case BuildingType::DIAMOND_MINE:
+        return std::make_unique<DiamondMine>();
     default:
         return nullptr;
     }
@@ -37,7 +40,8 @@ std::vector<BuildingType> BuildingFactory::GetAvailableBuildingTypes()
         BuildingType::MINE,
         BuildingType::CRYSTAL_MINE,
         BuildingType::POWER_PLANT,
-        BuildingType::RESEARCH_LAB};
+        BuildingType::RESEARCH_LAB,
+        BuildingType::DIAMOND_MINE};
 }
 //Productions
 std::unique_ptr<Production> BuildingFactory::CreateProduction(ProductionType type)

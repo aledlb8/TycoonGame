@@ -37,3 +37,4 @@
 *.ini
 *.dat
 *.pdb
+/.vscode

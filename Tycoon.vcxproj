@@ -151,6 +151,7 @@
     <ClCompile Include="src\resourceBuildings\PowerPlant.cpp" />
     <ClCompile Include="src\resourceBuildings\ResearchLab.cpp" />
     <ClCompile Include="src\resourceBuildings\Woodcutter.cpp" />
+    <ClCompile Include="src\resourceBuildings\DiamondMine.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Production.cpp" />
     <ClCompile Include="src\Resource.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="src\resourceBuildings\PowerPlant.h" />
     <ClInclude Include="src\resourceBuildings\ResearchLab.h" />
     <ClInclude Include="src\resourceBuildings\Woodcutter.h" />
+    <ClInclude Include="src\resourceBuildings\DiamondMine.h" />
     <ClInclude Include="src\GameConstants.h" />
     <ClInclude Include="src\Production.h" />
     <ClInclude Include="src\Resource.h" />

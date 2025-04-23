@@ -36,14 +36,25 @@ namespace GameConstants
     constexpr float WOOD_BASE_PRICE = 5.0f;
     constexpr float STONE_BASE_PRICE = 8.0f;
     constexpr float IRON_BASE_PRICE = 15.0f;
-    constexpr float GOLD_BASE_PRICE = 50.0f;
+    constexpr float GOLD_BASE_PRICE = 200.0f;
     constexpr float CRYSTAL_BASE_PRICE = 100.0f;
     constexpr float ENERGY_BASE_PRICE = 20.0f;
+    constexpr float DIAMOND_BASE_PRICE = 500.0f;  // Higher than gold
 
     // Price volatility
     constexpr float MIN_PRICE_CHANGE = -0.15f;
     constexpr float MAX_PRICE_CHANGE = 0.15f;
     constexpr float MIN_PRICE = 1.0f;
+
+    // Gold-specific price stability
+    constexpr float GOLD_MIN_PRICE_CHANGE = -0.05f;
+    constexpr float GOLD_MAX_PRICE_CHANGE = 0.10f;
+    constexpr float GOLD_MIN_PRICE = 100.0f;
+
+    // Diamond-specific price stability (even more stable than gold)
+    constexpr float DIAMOND_MIN_PRICE_CHANGE = -0.03f;  // Only 3% down
+    constexpr float DIAMOND_MAX_PRICE_CHANGE = 0.07f;   // Up to 7% up
+    constexpr float DIAMOND_MIN_PRICE = 300.0f;         // Won't drop below 300
 
     // Stock graph unlock price
     constexpr float STOCK_GRAPH_UNLOCK_PRICE = 1000.0f;

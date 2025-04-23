@@ -10,7 +10,8 @@ enum class BuildingType
     MINE,
     CRYSTAL_MINE,
     POWER_PLANT,
-    RESEARCH_LAB
+    RESEARCH_LAB,
+    DIAMOND_MINE
 };
 
 class Building

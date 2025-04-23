@@ -10,7 +10,8 @@ enum class ResourceType
     IRON,
     GOLD,
     CRYSTAL,
-    ENERGY
+    ENERGY,
+    DIAMOND  // New high-value resource
 };
 
 class Resource
