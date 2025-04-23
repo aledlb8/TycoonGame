@@ -1,11 +1,16 @@
 #include "BuildingFactory.h"
-#include "buildings/Woodcutter.h"
-#include "buildings/Mine.h"
-#include "buildings/CrystalMine.h"
-#include "buildings/PowerPlant.h"
-#include "buildings/ResearchLab.h"
+#include "resourceBuildings/Woodcutter.h"
+#include "resourceBuildings/Mine.h"
+#include "resourceBuildings/CrystalMine.h"
+#include "resourceBuildings/PowerPlant.h"
+#include "resourceBuildings/ResearchLab.h"
+#include "productionBuildings/Furniture.h"
+#include "productionBuildings/Tools.h"
+#include "productionBuildings/Railroads.h"
+#include "productionBuildings/Jewelry.h"
 #include "GameConstants.h"
 
+//Buildings
 std::unique_ptr<Building> BuildingFactory::CreateBuilding(BuildingType type)
 {
     switch (type)
@@ -33,4 +38,30 @@ std::vector<BuildingType> BuildingFactory::GetAvailableBuildingTypes()
         BuildingType::CRYSTAL_MINE,
         BuildingType::POWER_PLANT,
         BuildingType::RESEARCH_LAB};
+}
+//Productions
+std::unique_ptr<Production> BuildingFactory::CreateProduction(ProductionType type)
+{
+    switch (type)
+    {
+    case ProductionType::FURNITURE:
+        return std::make_unique<Furniture>();
+    case ProductionType::TOOLS:
+        return std::make_unique<Tools>();
+    case ProductionType::RAILROADS:
+        return std::make_unique<Railroads>();
+    case ProductionType::JEWELRY:
+        return std::make_unique<Jewelry>();
+    default:
+        return nullptr;
+    }
+}
+
+std::vector<ProductionType> BuildingFactory::GetAvailableProductionTypes()
+{
+    return {
+        ProductionType::FURNITURE,
+        ProductionType::TOOLS,
+        ProductionType::RAILROADS,
+        ProductionType::JEWELRY};
 }

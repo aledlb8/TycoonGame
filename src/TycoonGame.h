@@ -4,24 +4,10 @@
 #include <map>
 #include <memory>
 #include "Resource.h"
+#include "Production.h"
 #include "Building.h"
 #include "GameConstants.h"
 
-// Forward declarations
-// struct Building;  // Remove these as we're using the proper classes
-// struct Resource;
-
-// Resource type enum is now defined in Resource.h
-// enum class ResourceType { ... }
-
-// Resource structure is now defined in Resource.h
-// struct Resource { ... }
-
-// Building type enum is now defined in Building.h
-// enum class BuildingType { ... }
-
-// Building structure is now defined in Building.h
-// struct Building { ... }
 
 // Player structure
 class Player
@@ -29,6 +15,7 @@ class Player
 public:
     std::string name;
     std::map<ResourceType, Resource> resources;
+    std::vector<std::unique_ptr<Production>> productions;
     std::vector<std::unique_ptr<Building>> buildings;
     float money;
     int reputation;
@@ -53,6 +40,7 @@ public:
 
     // Game mechanics
     bool BuildStructure(BuildingType type);
+    bool BeginProduction(ProductionType type);
     bool SellStructure(int buildingIndex);
     void UpdateResources(float deltaTime);
     void UpdateEconomy(float deltaTime);
@@ -91,13 +79,16 @@ private:
     // Helper functions
     void InitializeResources();
     void InitializeBuildingTypes();
+    void InitializeProductionTypes();
     float CalculateResourcePrice(ResourceType type) const;
     float CalculateProductionMultiplier() const;
 
     // GUI rendering functions
     void RenderMainMenu();
     void RenderResourcesWindow();
+    void RenderProductionWindow();
+    void RenderPurchaseBuildingsWindow();
     void RenderBuildingsWindow();
     void RenderMarketWindow();
-    void RenderStatsWindow();
+    void RenderStockWindow();
 };

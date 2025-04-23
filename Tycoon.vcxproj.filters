@@ -42,7 +42,7 @@
     <ClCompile Include="src\TycoonGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buildings\Woodcutter.cpp">
+    <ClCompile Include="src\resourceBuildings\Woodcutter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Building.cpp">
@@ -54,16 +54,31 @@
     <ClCompile Include="src\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buildings\CrystalMine.cpp">
+    <ClCompile Include="src\resourceBuildings\CrystalMine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buildings\Mine.cpp">
+    <ClCompile Include="src\resourceBuildings\Mine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buildings\PowerPlant.cpp">
+    <ClCompile Include="src\resourceBuildings\PowerPlant.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buildings\ResearchLab.cpp">
+    <ClCompile Include="src\resourceBuildings\ResearchLab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Production.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\productionBuildings\Furniture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\productionBuildings\Tools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\productionBuildings\Railroads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\productionBuildings\Jewelry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,7 +110,7 @@
     <ClInclude Include="src\TycoonGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buildings\Woodcutter.h">
+    <ClInclude Include="src\resourceBuildings\Woodcutter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Building.h">
@@ -110,16 +125,31 @@
     <ClInclude Include="src\Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buildings\CrystalMine.h">
+    <ClInclude Include="src\resourceBuildings\CrystalMine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buildings\Mine.h">
+    <ClInclude Include="src\resourceBuildings\Mine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buildings\PowerPlant.h">
+    <ClInclude Include="src\resourceBuildings\PowerPlant.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buildings\ResearchLab.h">
+    <ClInclude Include="src\resourceBuildings\ResearchLab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Production.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\productionBuildings\Furniture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\productionBuildings\Tools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\productionBuildings\Railroads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\productionBuildings\Jewelry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
