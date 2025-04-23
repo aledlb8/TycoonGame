@@ -44,4 +44,7 @@ namespace GameConstants
     constexpr float MIN_PRICE_CHANGE = -0.15f;
     constexpr float MAX_PRICE_CHANGE = 0.15f;
     constexpr float MIN_PRICE = 1.0f;
+
+    // Stock graph unlock price
+    constexpr float STOCK_GRAPH_UNLOCK_PRICE = 1000.0f;
 }

@@ -1197,25 +1197,28 @@ void TycoonGame::RenderStockWindow()
             }
             ImGui::EndDisabled();
         }
-        else if (m_player.money < 1800) {
+        else if (m_player.money < GameConstants::STOCK_GRAPH_UNLOCK_PRICE) {
             if (ImGui::Button("Unlock Stocks!")) {
             }
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Text("Keep Saving, costs 1800.00$ to unlock stock graphs!");
+                ImGui::Text("Keep Saving, costs %.2f$ to unlock stock graphs!", GameConstants::STOCK_GRAPH_UNLOCK_PRICE);
                 ImGui::EndTooltip();
             }
         }
         else {
             if (ImGui::Button("Unlock Stocks!")) {
+                m_player.money -= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
+                m_player.totalSpent += GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
                 stocks_unlocked = true;
             }
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
                 ImGui::Text("Click to unlock stock graphs!");
-                ImGui::SeparatorText("Costs 1800.00$ ");
+                std::string costText = "Costs " + std::to_string(GameConstants::STOCK_GRAPH_UNLOCK_PRICE) + "$";
+                ImGui::SeparatorText(costText.c_str());
                 ImGui::EndTooltip();
             }
         }
