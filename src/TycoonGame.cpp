@@ -679,7 +679,7 @@ void TycoonGame::RenderResourcesWindow()
 {
     constexpr float storageX = 8.0f;
     constexpr float storageY = 30.0f;
-    constexpr float storageHeight = 700.0f;
+    constexpr float storageHeight = 538.0f;
     constexpr float marketX = 160.0f;
     constexpr float gap = 8.0f;
     float storageWidth = marketX - storageX - gap;
@@ -696,7 +696,7 @@ void TycoonGame::RenderResourcesWindow()
     ImGui::PopStyleColor();
     ImGui::Separator();
 
-    ImGui::BeginChild("ResourcesList", ImVec2(-1.0f, 0.0f), false);
+    ImGui::BeginChild("ResourcesList", ImVec2(-1.0f, -1.0f), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
     for (const auto &[type, resource] : m_player.resources)
     {
         if (type == ResourceType::MONEY)
@@ -1214,6 +1214,58 @@ constexpr int kHistorySize = 100;
 static std::map<ResourceType, std::vector<float>> resourceHistory;
 static std::map<ResourceType, int> historyOffset;
 static std::map<ResourceType, int> historyCount;
+
+void TycoonGame::RenderStockUnlockButton()
+{
+    if (stocks_unlocked) return;
+
+    bool canUnlock = m_player.reputation >= 40;
+    bool canAfford = m_player.money >= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
+    bool isDisabled = !canUnlock || !canAfford;
+
+    if (isDisabled)
+    {
+        ImGui::BeginDisabled();
+    }
+
+    if (ImGui::Button("Unlock Stocks!"))
+    {
+        if (canUnlock && canAfford)
+        {
+            m_player.money -= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
+            m_player.totalSpent += GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
+            stocks_unlocked = true;
+        }
+    }
+
+    if (isDisabled)
+    {
+        ImGui::EndDisabled();
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        
+        if (!canUnlock)
+        {
+            ImGui::Text("Gain more reputation to purchase stock graphs!");
+        }
+        else if (!canAfford)
+        {
+            ImGui::Text("Keep Saving, costs %.2f$ to unlock stock graphs!", GameConstants::STOCK_GRAPH_UNLOCK_PRICE);
+        }
+        else
+        {
+            ImGui::Text("Click to unlock stock graphs!");
+            std::string costText = "Costs " + std::to_string(GameConstants::STOCK_GRAPH_UNLOCK_PRICE) + "$";
+            ImGui::SeparatorText(costText.c_str());
+        }
+        
+        ImGui::EndTooltip();
+    }
+}
+
 void TycoonGame::RenderStockWindow()
 {
     ImGui::SetNextWindowPos(ImVec2(443, 30), ImGuiCond_FirstUseEver);
@@ -1228,49 +1280,7 @@ void TycoonGame::RenderStockWindow()
 
     if (!stocks_unlocked)
     {
-        if (m_player.reputation < 40)
-        {
-            ImGui::BeginDisabled();
-            if (ImGui::Button("Unlock Stocks!"))
-            {
-            }
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            {
-                ImGui::BeginTooltip();
-                ImGui::Text("Gain more reputation to purchase stock graphs!");
-                ImGui::EndTooltip();
-            }
-            ImGui::EndDisabled();
-        }
-        else if (m_player.money < GameConstants::STOCK_GRAPH_UNLOCK_PRICE)
-        {
-            if (ImGui::Button("Unlock Stocks!"))
-            {
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::Text("Keep Saving, costs %.2f$ to unlock stock graphs!", GameConstants::STOCK_GRAPH_UNLOCK_PRICE);
-                ImGui::EndTooltip();
-            }
-        }
-        else
-        {
-            if (ImGui::Button("Unlock Stocks!"))
-            {
-                m_player.money -= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
-                m_player.totalSpent += GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
-                stocks_unlocked = true;
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::Text("Click to unlock stock graphs!");
-                std::string costText = "Costs " + std::to_string(GameConstants::STOCK_GRAPH_UNLOCK_PRICE) + "$";
-                ImGui::SeparatorText(costText.c_str());
-                ImGui::EndTooltip();
-            }
-        }
+        RenderStockUnlockButton();
     }
     else
     {

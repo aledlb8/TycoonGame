@@ -1,11 +1,3 @@
-// Dear ImGui: standalone example application for DirectX 11
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include "../lib/imgui.h"
 #include "../lib/imgui_impl_win32.h"
 #include "../lib/imgui_impl_dx11.h"
@@ -65,7 +57,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // Create application window
         WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"Tycoon Game", nullptr};
         ::RegisterClassExW(&wc);
-        HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Tycoon Game", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, (GetSystemMetrics(SM_CXSCREEN)-1045)/2, (GetSystemMetrics(SM_CYSCREEN)-800)/2, 1045, 800, nullptr, nullptr, wc.hInstance, nullptr);
+        HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Tycoon Game", WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX, (GetSystemMetrics(SM_CXSCREEN) - 1045) / 2, (GetSystemMetrics(SM_CYSCREEN) - 800) / 2, 1045, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
         // Initialize Direct3D
         if (!CreateDeviceD3D(hwnd))

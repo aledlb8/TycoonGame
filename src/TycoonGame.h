@@ -91,4 +91,5 @@ private:
     void RenderBuildingsWindow();
     void RenderMarketWindow();
     void RenderStockWindow();
+    void RenderStockUnlockButton();
 };
