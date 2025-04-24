@@ -35,13 +35,13 @@ void Resource::UpdatePrice(float volatility)
         // Set reasonable price ranges for each resource type
         switch (m_type) {
             case ResourceType::WOOD:
-                m_basePrice = std::clamp(newPrice, 1.0f, 20.0f);
+                m_basePrice = std::clamp(newPrice, 1.0f, 6.85f);
                 break;
             case ResourceType::STONE:
-                m_basePrice = std::clamp(newPrice, 2.0f, 30.0f);
+                m_basePrice = std::clamp(newPrice, 4.0f, 12.0f);
                 break;
             case ResourceType::IRON:
-                m_basePrice = std::clamp(newPrice, 5.0f, 50.0f);
+                m_basePrice = std::clamp(newPrice, 5.0f, 39.0f);
                 break;
             case ResourceType::CRYSTAL:
                 m_basePrice = std::clamp(newPrice, 50.0f, 200.0f);

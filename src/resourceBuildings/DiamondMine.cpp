@@ -46,7 +46,7 @@ void DiamondMine::UpdateEfficiency()
     }
     else
     {
-        SetEfficiency(0.0f);
+        SetEfficiency(0.02f);
     }
 }
 
