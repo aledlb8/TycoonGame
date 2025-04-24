@@ -52,8 +52,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
     try
     {
-        std::cout << "Starting Tycoon Game..." << std::endl;
-
         // Create application window
         WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"Tycoon Game", nullptr};
         ::RegisterClassExW(&wc);
@@ -90,17 +88,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (!g_font)
             {
                 g_font = io.Fonts->AddFontDefault();
-                std::cout << "Using default font - HackNerdFont.ttf not found in lib folder" << std::endl;
-            }
-            else
-            {
-                std::cout << "Successfully loaded HackNerdFont.ttf from lib folder" << std::endl;
             }
         }
         catch (...)
         {
             g_font = io.Fonts->AddFontDefault();
-            std::cout << "Using default font - Error loading HackNerdFont.ttf from lib folder" << std::endl;
         }
 
         // Setup Platform/Renderer backends
