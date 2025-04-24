@@ -22,6 +22,7 @@ public:
     float totalEarnings;
     float totalSpent;
     int achievements;
+    bool hasStocksUnlocked = false;
 };
 
 // Game state class

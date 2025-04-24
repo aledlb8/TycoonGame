@@ -18,7 +18,10 @@ CrystalMine::CrystalMine()
 
 void CrystalMine::UpdateEfficiency()
 {
-    // Crystal mines require both energy and iron to operate efficiently
+    // First use the base class efficiency calculation
+    Building::UpdateEfficiency();
+
+    // Crystal mines have additional efficiency requirements
     bool hasEnergy = false;
     bool hasIron = false;
     for (const auto &resource : GetInputResources())
@@ -33,18 +36,19 @@ void CrystalMine::UpdateEfficiency()
         }
     }
 
-    if (hasEnergy && hasIron)
+    // Apply additional efficiency factors based on resource availability
+    float additionalEfficiency = 1.0f;
+    if (!hasEnergy && !hasIron)
     {
-        SetEfficiency(1.0f);
+        additionalEfficiency = 0.1f; // Very low efficiency without any resources
     }
-    else if (hasEnergy || hasIron)
+    else if (!hasEnergy || !hasIron)
     {
-        SetEfficiency(0.3f); // Partial efficiency with only one resource
+        additionalEfficiency = 0.3f; // Partial efficiency with only one resource
     }
-    else
-    {
-        SetEfficiency(0.1f); // Very low efficiency without resources
-    }
+
+    // Combine base efficiency with additional factors
+    SetEfficiency(GetEfficiency() * additionalEfficiency);
 }
 
 float CrystalMine::CalculateProduction(float deltaTime) const

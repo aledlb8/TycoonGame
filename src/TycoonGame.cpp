@@ -947,7 +947,11 @@ void TycoonGame::RenderPurchaseBuildingsWindow()
         case BuildingType::RESEARCH_LAB:
             symbol = "[RL]";
             break;
-        }
+        case BuildingType::DIAMOND_MINE:
+            symbol = "[DM]";
+            break;
+
+    }
 
         // Create unique button text with ID
         std::string uniqueButtonText = std::string(symbol) + " " + building->GetName() + " ($" +
@@ -1209,7 +1213,6 @@ void TycoonGame::RenderMarketWindow()
     ImGui::End();
 }
 
-bool stocks_unlocked = false;
 constexpr int kHistorySize = 100;
 static std::map<ResourceType, std::vector<float>> resourceHistory;
 static std::map<ResourceType, int> historyOffset;
@@ -1217,7 +1220,7 @@ static std::map<ResourceType, int> historyCount;
 
 void TycoonGame::RenderStockUnlockButton()
 {
-    if (stocks_unlocked) return;
+    if (m_player.hasStocksUnlocked) return;
 
     bool canUnlock = m_player.reputation >= 40;
     bool canAfford = m_player.money >= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
@@ -1234,7 +1237,7 @@ void TycoonGame::RenderStockUnlockButton()
         {
             m_player.money -= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
             m_player.totalSpent += GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
-            stocks_unlocked = true;
+            m_player.hasStocksUnlocked = true;
         }
     }
 
@@ -1243,7 +1246,7 @@ void TycoonGame::RenderStockUnlockButton()
         ImGui::EndDisabled();
     }
 
-    if (ImGui::IsItemHovered())
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
         ImGui::BeginTooltip();
         
@@ -1258,7 +1261,9 @@ void TycoonGame::RenderStockUnlockButton()
         else
         {
             ImGui::Text("Click to unlock stock graphs!");
-            std::string costText = "Costs " + std::to_string(GameConstants::STOCK_GRAPH_UNLOCK_PRICE) + "$";
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(2) << GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
+            std::string costText = "Costs " + ss.str() + "$";
             ImGui::SeparatorText(costText.c_str());
         }
         
@@ -1278,7 +1283,7 @@ void TycoonGame::RenderStockWindow()
     ImGui::PopStyleColor();
     ImGui::Separator();
 
-    if (!stocks_unlocked)
+    if (!m_player.hasStocksUnlocked)
     {
         RenderStockUnlockButton();
     }
@@ -1514,6 +1519,11 @@ bool TycoonGame::SaveGame(const std::string &filename) const
             file.write(reinterpret_cast<const char *>(&isInvested), sizeof(isInvested));
         }
 
+        // Save has stock graph
+        size_t hasStocksUnlocked = m_player.hasStocksUnlocked ? 1:0;
+        file.write(reinterpret_cast<const char*>(&hasStocksUnlocked), sizeof(hasStocksUnlocked));
+
+
         return true;
     }
     catch (...)
@@ -1641,6 +1651,11 @@ bool TycoonGame::LoadGame(const std::string &filename)
                 (*it)->SetIsInvested(isInvested);
             }
         }
+
+        // Load has stock graphs
+        size_t hasStocksUnlocked;
+        file.read(reinterpret_cast<char*>(&hasStocksUnlocked), sizeof(hasStocksUnlocked));
+        m_player.hasStocksUnlocked = (hasStocksUnlocked==1);
 
         return true;
     }

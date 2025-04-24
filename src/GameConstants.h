@@ -33,7 +33,7 @@ namespace GameConstants
     constexpr float PRICE_VOLATILITY = 0.1f;
 
     // Resource base prices
-    constexpr float WOOD_BASE_PRICE = 5.0f;
+    constexpr float WOOD_BASE_PRICE = 4.0f;
     constexpr float STONE_BASE_PRICE = 8.0f;
     constexpr float IRON_BASE_PRICE = 15.0f;
     constexpr float GOLD_BASE_PRICE = 200.0f;

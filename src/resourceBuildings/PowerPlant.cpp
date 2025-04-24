@@ -17,7 +17,10 @@ PowerPlant::PowerPlant()
 
 void PowerPlant::UpdateEfficiency()
 {
-    // Power plants require both wood and stone to operate efficiently
+    // First use the base class efficiency calculation
+    Building::UpdateEfficiency();
+
+    // Power plants have additional efficiency requirements
     bool hasWood = false;
     bool hasStone = false;
     for (const auto &resource : GetInputResources())
@@ -32,18 +35,19 @@ void PowerPlant::UpdateEfficiency()
         }
     }
 
-    if (hasWood && hasStone)
+    // Apply additional efficiency factors based on resource availability
+    float additionalEfficiency = 1.0f;
+    if (!hasWood && !hasStone)
     {
-        SetEfficiency(1.0f);
+        additionalEfficiency = 0.1f; // Very low efficiency without any resources
     }
-    else if (hasWood || hasStone)
+    else if (!hasWood || !hasStone)
     {
-        SetEfficiency(0.4f); // Partial efficiency with only one resource
+        additionalEfficiency = 0.4f; // Partial efficiency with only one resource
     }
-    else
-    {
-        SetEfficiency(0.1f); // Very low efficiency without resources
-    }
+
+    // Combine base efficiency with additional factors
+    SetEfficiency(GetEfficiency() * additionalEfficiency);
 }
 
 float PowerPlant::CalculateProduction(float deltaTime) const

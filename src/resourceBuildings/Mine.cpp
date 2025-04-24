@@ -17,7 +17,10 @@ Mine::Mine()
 
 void Mine::UpdateEfficiency()
 {
-    // Mines require energy to operate efficiently
+    // First use the base class efficiency calculation
+    Building::UpdateEfficiency();
+
+    // Mines have additional efficiency requirements
     bool hasEnergy = false;
     for (const auto &resource : GetInputResources())
     {
@@ -27,7 +30,12 @@ void Mine::UpdateEfficiency()
             break;
         }
     }
-    SetEfficiency(hasEnergy ? 1.0f : 0.2f); // Very low efficiency without energy
+
+    // Apply additional efficiency factors based on resource availability
+    float additionalEfficiency = hasEnergy ? 1.0f : 0.2f;
+
+    // Combine base efficiency with additional factors
+    SetEfficiency(GetEfficiency() * additionalEfficiency);
 }
 
 float Mine::CalculateProduction(float deltaTime) const
