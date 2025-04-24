@@ -43,6 +43,9 @@ public:
     void SetCompletionTime(float price) { m_completionTime = price; }
     void SetOwned(bool owned) { m_isOwned = owned; }
     void SetIsInvested(bool invested) { m_invested = invested; }
+    void SetCost(float cost) { m_cost = cost; }
+    void SetCompletionAmount(float amount) { m_completionAmount = amount; }
+    void SetRequiredReputation(int reputation) { m_requiredReputation = reputation; }
 
 
 protected:

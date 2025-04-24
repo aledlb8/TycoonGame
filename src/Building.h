@@ -51,6 +51,8 @@ public:
     void SetLevel(int level) { m_level = level; }
     void SetMaintenanceCost(float cost) { m_maintenanceCost = cost; }
     void SetUpgradeCost(float cost) { m_upgradeCost = cost; }
+    void SetRequiredReputation(int reputation) { m_requiredReputation = reputation; }
+    void SetBaseProductionRate(float rate) { m_baseProductionRate = rate; }
 
     // Virtual methods that can be overridden by specific building types
     virtual void Update(float deltaTime);

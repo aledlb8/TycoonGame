@@ -558,6 +558,7 @@ void TycoonGame::Render()
 
 void TycoonGame::RenderMainMenu()
 {
+    static bool showAbout = false;
     bool confirm_popup = false;
     if (ImGui::BeginMainMenuBar())
     {
@@ -596,7 +597,7 @@ void TycoonGame::RenderMainMenu()
         {
             if (ImGui::MenuItem("About"))
             {
-                // Show about dialog
+                showAbout = true;
             }
             ImGui::EndMenu();
         }
@@ -673,6 +674,36 @@ void TycoonGame::RenderMainMenu()
 
         ImGui::EndPopup();
     }
+
+    // About Window
+    if (showAbout)
+    {
+        ImGui::OpenPopup("About");
+        showAbout = false;
+    }
+
+    if (ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.84f, 0.0f, 1.0f));
+        ImGui::Text("Tycoon Game");
+        ImGui::PopStyleColor();
+        ImGui::Separator();
+        
+        ImGui::Text("A business simulation game where you build and manage");
+        ImGui::Text("your industrial empire!");
+        ImGui::Separator();
+        
+        ImGui::Text("Version: 1.0.0");
+        ImGui::Text("Created with Dear ImGui and DirectX 11");
+        ImGui::Separator();
+        
+        if (ImGui::Button("Close"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
 }
 
 void TycoonGame::RenderResourcesWindow()
@@ -703,7 +734,7 @@ void TycoonGame::RenderResourcesWindow()
             continue;
 
         ImVec4 color;
-        const char *symbol;
+        const char *symbol = "";
         switch (type)
         {
         case ResourceType::WOOD:
@@ -1439,6 +1470,15 @@ bool TycoonGame::SaveGame(const std::string &filename) const
         file.write(reinterpret_cast<const char *>(&m_gameTime), sizeof(m_gameTime));
         file.write(reinterpret_cast<const char *>(&m_isPaused), sizeof(m_isPaused));
 
+        // Save timers
+        file.write(reinterpret_cast<const char *>(&m_economyUpdateTimer), sizeof(m_economyUpdateTimer));
+        file.write(reinterpret_cast<const char *>(&m_resourceUpdateTimer), sizeof(m_resourceUpdateTimer));
+        file.write(reinterpret_cast<const char *>(&m_reputationUpdateTimer), sizeof(m_reputationUpdateTimer));
+        file.write(reinterpret_cast<const char *>(&m_maintenanceUpdateTimer), sizeof(m_maintenanceUpdateTimer));
+        file.write(reinterpret_cast<const char *>(&m_lastFrameTime), sizeof(m_lastFrameTime));
+        file.write(reinterpret_cast<const char *>(&m_fpsUpdateTimer), sizeof(m_fpsUpdateTimer));
+        file.write(reinterpret_cast<const char *>(&m_frameCount), sizeof(m_frameCount));
+
         // Save player data
         size_t nameLength = m_player.name.length();
         file.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
@@ -1489,12 +1529,20 @@ bool TycoonGame::SaveGame(const std::string &filename) const
                 bool isOwned = building->IsOwned();
                 bool isOperational = building->IsOperational();
                 float efficiency = building->GetEfficiency();
+                float maintenanceCost = building->GetMaintenanceCost();
+                float requiredReputation = building->GetRequiredReputation();
+                float baseProductionRate = building->GetBaseProductionRate();
+                float upgradeCost = building->GetUpgradeCost();
 
                 file.write(reinterpret_cast<const char *>(&cost), sizeof(cost));
                 file.write(reinterpret_cast<const char *>(&level), sizeof(level));
                 file.write(reinterpret_cast<const char *>(&isOwned), sizeof(isOwned));
                 file.write(reinterpret_cast<const char *>(&isOperational), sizeof(isOperational));
                 file.write(reinterpret_cast<const char *>(&efficiency), sizeof(efficiency));
+                file.write(reinterpret_cast<const char *>(&maintenanceCost), sizeof(maintenanceCost));
+                file.write(reinterpret_cast<const char *>(&requiredReputation), sizeof(requiredReputation));
+                file.write(reinterpret_cast<const char *>(&baseProductionRate), sizeof(baseProductionRate));
+                file.write(reinterpret_cast<const char *>(&upgradeCost), sizeof(upgradeCost));
             }
         }
 
@@ -1513,10 +1561,18 @@ bool TycoonGame::SaveGame(const std::string &filename) const
             bool isOwned = production->IsOwned();
             float currentTime = production->GetTime();
             bool isInvested = production->IsInvested();
+            float cost = production->GetCost();
+            float requiredReputation = production->GetRequiredReputation();
+            float completionTime = production->GetCompletionTime();
+            float completionAmount = production->GetCompletionAmount();
 
             file.write(reinterpret_cast<const char *>(&isOwned), sizeof(isOwned));
             file.write(reinterpret_cast<const char *>(&currentTime), sizeof(currentTime));
             file.write(reinterpret_cast<const char *>(&isInvested), sizeof(isInvested));
+            file.write(reinterpret_cast<const char *>(&cost), sizeof(cost));
+            file.write(reinterpret_cast<const char *>(&requiredReputation), sizeof(requiredReputation));
+            file.write(reinterpret_cast<const char *>(&completionTime), sizeof(completionTime));
+            file.write(reinterpret_cast<const char *>(&completionAmount), sizeof(completionAmount));
         }
 
         // Save has stock graph
@@ -1545,6 +1601,15 @@ bool TycoonGame::LoadGame(const std::string &filename)
         // Load game time and state
         file.read(reinterpret_cast<char *>(&m_gameTime), sizeof(m_gameTime));
         file.read(reinterpret_cast<char *>(&m_isPaused), sizeof(m_isPaused));
+
+        // Load timers
+        file.read(reinterpret_cast<char *>(&m_economyUpdateTimer), sizeof(m_economyUpdateTimer));
+        file.read(reinterpret_cast<char *>(&m_resourceUpdateTimer), sizeof(m_resourceUpdateTimer));
+        file.read(reinterpret_cast<char *>(&m_reputationUpdateTimer), sizeof(m_reputationUpdateTimer));
+        file.read(reinterpret_cast<char *>(&m_maintenanceUpdateTimer), sizeof(m_maintenanceUpdateTimer));
+        file.read(reinterpret_cast<char *>(&m_lastFrameTime), sizeof(m_lastFrameTime));
+        file.read(reinterpret_cast<char *>(&m_fpsUpdateTimer), sizeof(m_fpsUpdateTimer));
+        file.read(reinterpret_cast<char *>(&m_frameCount), sizeof(m_frameCount));
 
         // Load player data
         size_t nameLength;
@@ -1597,12 +1662,20 @@ bool TycoonGame::LoadGame(const std::string &filename)
             int level;
             bool isOwned, isOperational;
             float efficiency;
+            float maintenanceCost;
+            float requiredReputation;
+            float baseProductionRate;
+            float upgradeCost;
 
             file.read(reinterpret_cast<char *>(&cost), sizeof(cost));
             file.read(reinterpret_cast<char *>(&level), sizeof(level));
             file.read(reinterpret_cast<char *>(&isOwned), sizeof(isOwned));
             file.read(reinterpret_cast<char *>(&isOperational), sizeof(isOperational));
             file.read(reinterpret_cast<char *>(&efficiency), sizeof(efficiency));
+            file.read(reinterpret_cast<char *>(&maintenanceCost), sizeof(maintenanceCost));
+            file.read(reinterpret_cast<char *>(&requiredReputation), sizeof(requiredReputation));
+            file.read(reinterpret_cast<char *>(&baseProductionRate), sizeof(baseProductionRate));
+            file.read(reinterpret_cast<char *>(&upgradeCost), sizeof(upgradeCost));
 
             auto building = BuildingFactory::CreateBuilding(static_cast<BuildingType>(buildingType));
             if (building)
@@ -1611,6 +1684,10 @@ bool TycoonGame::LoadGame(const std::string &filename)
                 building->SetOwned(isOwned);
                 building->SetOperational(isOperational);
                 building->SetEfficiency(efficiency);
+                building->SetMaintenanceCost(maintenanceCost);
+                building->SetRequiredReputation(requiredReputation);
+                building->SetBaseProductionRate(baseProductionRate);
+                building->SetUpgradeCost(upgradeCost);
                 m_player.buildings.push_back(std::move(building));
             }
         }
@@ -1632,9 +1709,18 @@ bool TycoonGame::LoadGame(const std::string &filename)
             bool isOwned;
             float currentTime;
             bool isInvested;
+            float cost;
+            float requiredReputation;
+            float completionTime;
+            float completionAmount;
+
             file.read(reinterpret_cast<char *>(&isOwned), sizeof(isOwned));
             file.read(reinterpret_cast<char *>(&currentTime), sizeof(currentTime));
             file.read(reinterpret_cast<char *>(&isInvested), sizeof(isInvested));
+            file.read(reinterpret_cast<char *>(&cost), sizeof(cost));
+            file.read(reinterpret_cast<char *>(&requiredReputation), sizeof(requiredReputation));
+            file.read(reinterpret_cast<char *>(&completionTime), sizeof(completionTime));
+            file.read(reinterpret_cast<char *>(&completionAmount), sizeof(completionAmount));
 
             auto it = std::find_if(
                 m_player.productions.begin(),
@@ -1649,6 +1735,10 @@ bool TycoonGame::LoadGame(const std::string &filename)
                 (*it)->SetOwned(isOwned);
                 (*it)->SetTime(currentTime);
                 (*it)->SetIsInvested(isInvested);
+                (*it)->SetCost(cost);
+                (*it)->SetRequiredReputation(requiredReputation);
+                (*it)->SetCompletionTime(completionTime);
+                (*it)->SetCompletionAmount(completionAmount);
             }
         }
 
