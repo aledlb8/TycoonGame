@@ -18,7 +18,10 @@ DiamondMine::DiamondMine()
 
 void DiamondMine::UpdateEfficiency()
 {
-    // Diamond mines require energy, crystal, and gold to operate efficiently
+    // First use the base class efficiency calculation
+    Building::UpdateEfficiency();
+
+    // Diamond mines have additional efficiency requirements
     bool hasEnergy = false;
     bool hasCrystal = false;
     bool hasGold = false;
@@ -39,15 +42,16 @@ void DiamondMine::UpdateEfficiency()
         }
     }
 
-    // Efficiency is based on having all required resources
-    if (hasEnergy && hasCrystal && hasGold)
+    // Apply additional efficiency factors based on resource availability
+    float additionalEfficiency = 1.0f;
+    if (!hasEnergy || !hasCrystal || !hasGold)
     {
-        SetEfficiency(1.0f);
+        // Reduce efficiency if any required resource is missing
+        additionalEfficiency = 0.3f;
     }
-    else
-    {
-        SetEfficiency(0.02f);
-    }
+
+    // Combine base efficiency with additional factors
+    SetEfficiency(GetEfficiency() * additionalEfficiency);
 }
 
 float DiamondMine::CalculateProduction(float deltaTime) const

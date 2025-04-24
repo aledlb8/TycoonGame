@@ -58,18 +58,24 @@ bool Building::Upgrade()
 
 void Building::UpdateEfficiency()
 {
-    // Base efficiency calculation
-    // Can be overridden by specific building types
-    bool hasRequiredResources = true;
+    // Calculate efficiency based on resource availability and amounts
+    float totalEfficiency = 0.0f;
+    int resourceCount = 0;
+
     for (const auto &resource : m_inputResources)
     {
-        if (resource.GetAmount() <= 0)
+        resourceCount++;
+        // Calculate how much of the required resource we have
+        float requiredAmount = m_baseProductionRate * resource.GetProductionRate();
+        if (requiredAmount > 0)
         {
-            hasRequiredResources = false;
-            break;
+            float resourceEfficiency = std::min(resource.GetAmount() / requiredAmount, 1.0f);
+            totalEfficiency += resourceEfficiency;
         }
     }
-    m_efficiency = hasRequiredResources ? 1.0f : 0.5f;
+
+    // Average the efficiency across all required resources
+    m_efficiency = resourceCount > 0 ? totalEfficiency / resourceCount : 1.0f;
 }
 
 float Building::CalculateProduction(float deltaTime) const

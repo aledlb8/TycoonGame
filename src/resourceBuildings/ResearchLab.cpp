@@ -17,7 +17,10 @@ ResearchLab::ResearchLab()
 
 void ResearchLab::UpdateEfficiency()
 {
-    // Research labs require both energy and crystals to operate efficiently
+    // First use the base class efficiency calculation
+    Building::UpdateEfficiency();
+
+    // Research labs have additional efficiency requirements
     bool hasEnergy = false;
     bool hasCrystal = false;
     for (const auto &resource : GetInputResources())
@@ -32,18 +35,19 @@ void ResearchLab::UpdateEfficiency()
         }
     }
 
-    if (hasEnergy && hasCrystal)
+    // Apply additional efficiency factors based on resource availability
+    float additionalEfficiency = 1.0f;
+    if (!hasEnergy && !hasCrystal)
     {
-        SetEfficiency(1.0f);
+        additionalEfficiency = 0.1f; // Very low efficiency without any resources
     }
-    else if (hasEnergy || hasCrystal)
+    else if (!hasEnergy || !hasCrystal)
     {
-        SetEfficiency(0.3f); // Partial efficiency with only one resource
+        additionalEfficiency = 0.3f; // Partial efficiency with only one resource
     }
-    else
-    {
-        SetEfficiency(0.1f); // Very low efficiency without resources
-    }
+
+    // Combine base efficiency with additional factors
+    SetEfficiency(GetEfficiency() * additionalEfficiency);
 }
 
 float ResearchLab::CalculateProduction(float deltaTime) const
