@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <cmath>
 #include <fstream>
+#include "ResourceManager.h"
 
 TycoonGame::TycoonGame()
     : m_gameTime(0.0f), m_isPaused(false), m_economyUpdateTimer(0.0f), m_resourceUpdateTimer(0.0f), m_reputationUpdateTimer(0.0f), m_maintenanceUpdateTimer(0.0f), m_lastFrameTime(0.0f), m_fps(0.0f), m_frameCount(0), m_fpsUpdateTimer(0.0f)
@@ -68,25 +69,20 @@ void TycoonGame::Initialize()
 
 void TycoonGame::InitializeResources()
 {
-    try
-    {
-        // Initialize starting resources
-        m_player.resources.clear(); // Clear existing resources first
-        m_player.resources[ResourceType::MONEY] = Resource(ResourceType::MONEY, "Money", GameConstants::STARTING_MONEY, 1.0f, true);
-        m_player.resources[ResourceType::WOOD] = Resource(ResourceType::WOOD, "Wood", 0.0f, GameConstants::WOOD_BASE_PRICE, false);
-        m_player.resources[ResourceType::STONE] = Resource(ResourceType::STONE, "Stone", 0.0f, GameConstants::STONE_BASE_PRICE, false);
-        m_player.resources[ResourceType::IRON] = Resource(ResourceType::IRON, "Iron", 0.0f, GameConstants::IRON_BASE_PRICE, false);
-        m_player.resources[ResourceType::GOLD] = Resource(ResourceType::GOLD, "Gold", 0.0f, GameConstants::GOLD_BASE_PRICE, false);
-        m_player.resources[ResourceType::CRYSTAL] = Resource(ResourceType::CRYSTAL, "Crystal", 0.0f, GameConstants::CRYSTAL_BASE_PRICE, false);
-        m_player.resources[ResourceType::ENERGY] = Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false);
-        m_player.resources[ResourceType::DIAMOND] = Resource(ResourceType::DIAMOND, "Diamond", 0.0f, GameConstants::DIAMOND_BASE_PRICE, false);
-    }
-    catch (const std::exception &e)
-    {
-        std::stringstream ss;
-        ss << "Failed to initialize resources: " << e.what();
-        throw std::runtime_error(ss.str());
-    }
+    m_player.resources.clear();
+    m_player.resources[ResourceType::MONEY] = Resource(ResourceType::MONEY, "Money", GameConstants::STARTING_MONEY, 1.0f, true);
+    m_player.resources[ResourceType::WOOD] = Resource(ResourceType::WOOD, "Wood", 0.0f, GameConstants::WOOD_BASE_PRICE, false);
+    m_player.resources[ResourceType::STONE] = Resource(ResourceType::STONE, "Stone", 0.0f, GameConstants::STONE_BASE_PRICE, false);
+    m_player.resources[ResourceType::IRON] = Resource(ResourceType::IRON, "Iron", 0.0f, GameConstants::IRON_BASE_PRICE, false);
+    m_player.resources[ResourceType::GOLD] = Resource(ResourceType::GOLD, "Gold", 0.0f, GameConstants::GOLD_BASE_PRICE, false);
+    m_player.resources[ResourceType::CRYSTAL] = Resource(ResourceType::CRYSTAL, "Crystal", 0.0f, GameConstants::CRYSTAL_BASE_PRICE, false);
+    m_player.resources[ResourceType::ENERGY] = Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false);
+    m_player.resources[ResourceType::DIAMOND] = Resource(ResourceType::DIAMOND, "Diamond", 0.0f, GameConstants::DIAMOND_BASE_PRICE, false);
+
+    // Mirror into the global pool:
+    auto &rm = ResourceManager::Instance();
+    for (auto &p : m_player.resources)
+        rm.Add(p.first, p.second.GetAmount());
 }
 
 void TycoonGame::InitializeBuildingTypes()
@@ -159,14 +155,6 @@ void TycoonGame::Update(float deltaTime)
         {
             m_gameTime += deltaTime;
 
-            // Update resources
-            m_resourceUpdateTimer += deltaTime;
-            if (m_resourceUpdateTimer >= GameConstants::RESOURCE_UPDATE_INTERVAL)
-            {
-                UpdateResources(GameConstants::RESOURCE_UPDATE_INTERVAL);
-                m_resourceUpdateTimer = 0.0f;
-            }
-
             // Update economy
             m_economyUpdateTimer += deltaTime;
             if (m_economyUpdateTimer >= GameConstants::ECONOMY_UPDATE_INTERVAL)
@@ -217,10 +205,27 @@ void TycoonGame::Update(float deltaTime)
             // Update all buildings
             for (auto &building : m_player.buildings)
             {
-                if (building && building->IsOwned())
+                if (building && building->IsOwned() && building->IsOperational())
                 {
                     building->Update(deltaTime);
                 }
+            }
+
+            // Update all resources
+            m_resourceUpdateTimer += deltaTime;
+            if (m_resourceUpdateTimer >= GameConstants::RESOURCE_UPDATE_INTERVAL)
+            {
+                UpdateResources(m_resourceUpdateTimer);
+                m_resourceUpdateTimer = 0.0f;
+            }
+
+            // — Mirror the global pool back into your UI map —
+            auto &rm = ResourceManager::Instance();
+            for (auto &pair : m_player.resources)
+            {
+                float amt = rm.Get(pair.first);
+                pair.second.SetAmount(amt);
+                pair.second.SetOwned(amt > 0.0f);
             }
 
             // Update all productions
@@ -276,50 +281,35 @@ float TycoonGame::CalculateProductionMultiplier() const
 void TycoonGame::UpdateResources(float deltaTime)
 {
     float productionMultiplier = CalculateProductionMultiplier();
+    auto &rm = ResourceManager::Instance();
 
-    // Update resources for each operational building
-    for (const auto &building : m_player.buildings)
+    for (auto &building : m_player.buildings)
     {
-        if (!building || !building->IsOperational() || !building->IsOwned())
+        if (!building || !building->IsOwned() || !building->IsOperational())
             continue;
 
-        // Check if we have enough input resources
-        bool canProduce = true;
-        for (const auto &input : building->GetInputResources())
+        // 1) compute “raw” production this tick
+        float raw = building->GetBaseProductionRate() * building->GetEfficiency() * deltaTime * productionMultiplier;
+
+        // 2) consume each input from the global pool
+        bool ok = true;
+        for (auto const &req : building->GetInputResources())
         {
-            auto it = m_player.resources.find(input.GetType());
-            if (it == m_player.resources.end() || it->second.GetAmount() < input.GetAmount())
+            float need = raw * req.GetProductionRate();
+            if (!rm.Consume(req.GetType(), need))
             {
-                canProduce = false;
+                ok = false;
                 break;
             }
         }
+        if (!ok)
+            continue;
 
-        if (canProduce)
+        // 3) deposit outputs into the global pool
+        for (auto const &out : building->GetOutputResources())
         {
-            // Consume input resources
-            for (const auto &input : building->GetInputResources())
-            {
-                m_player.resources[input.GetType()].SetAmount(
-                    m_player.resources[input.GetType()].GetAmount() - input.GetAmount());
-            }
-
-            // Produce output resources
-            float production = building->CalculateProduction(deltaTime) * productionMultiplier;
-            for (const auto &output : building->GetOutputResources())
-            {
-                if (m_player.resources[output.GetType()].GetAmount() < 100)
-                {
-                    m_player.resources[output.GetType()].SetAmount(
-                        m_player.resources[output.GetType()].GetAmount() + production);
-                    m_player.resources[output.GetType()].SetOwned(true);
-                }
-                else if (m_player.resources[output.GetType()].GetAmount() > 100)
-                {
-                    m_player.resources[output.GetType()].SetAmount(100);
-                    m_player.resources[output.GetType()].SetOwned(true);
-                }
-            }
+            float give = raw * out.GetProductionRate();
+            rm.Add(out.GetType(), give);
         }
     }
 }
@@ -364,34 +354,31 @@ void TycoonGame::UpdateReputation()
 
 bool TycoonGame::BuildStructure(BuildingType type)
 {
-    try
+    for (auto &building : m_player.buildings)
     {
-        // Find building template
-        for (const auto &building : m_player.buildings)
+        if (!building || building->GetType() != type)
+            continue;
+        if (building->IsOwned() ||
+            m_player.money < building->GetCost() ||
+            m_player.reputation < building->GetRequiredReputation())
+            return false;
+
+        m_player.money -= building->GetCost();
+        m_player.totalSpent += building->GetCost();
+        building->SetOwned(true);
+
+        constexpr float STARTER_FUEL = 20.0f;
+        auto &rm = ResourceManager::Instance();
+        for (auto const &req : building->GetInputResources())
         {
-            if (building && building->GetType() == type)
-            {
-                // Check if player has enough money and reputation
-                if (m_player.money < building->GetCost() || m_player.reputation < building->GetRequiredReputation())
-                    return false;
-
-                // Check if player already owns this type of building
-                if (building->IsOwned())
-                    return false;
-
-                // Deduct cost and mark as owned
-                m_player.money -= building->GetCost();
-                m_player.totalSpent += building->GetCost();
-                building->SetOwned(true);
-                return true;
-            }
+            rm.Add(req.GetType(), STARTER_FUEL);
+            auto &pr = m_player.resources[req.GetType()];
+            pr.SetAmount(pr.GetAmount() + STARTER_FUEL);
+            pr.SetOwned(true);
         }
-        return false;
+        return true;
     }
-    catch (...)
-    {
-        return false;
-    }
+    return false;
 }
 
 bool TycoonGame::BeginProduction(ProductionType type)
@@ -483,49 +470,44 @@ bool TycoonGame::UpgradeBuilding(int buildingIndex)
 
 bool TycoonGame::BuyResource(ResourceType type, float amount)
 {
-    try
-    {
-        auto it = m_player.resources.find(type);
-        if (it == m_player.resources.end())
-            return false;
-
-        float totalCost = amount * it->second.GetBasePrice();
-        if (m_player.money < totalCost)
-            return false;
-
-        m_player.money -= totalCost;
-        m_player.totalSpent += totalCost;
-        it->second.SetAmount(it->second.GetAmount() + amount);
-        it->second.SetOwned(true);
-        return true;
-    }
-    catch (...)
-    {
+    auto it = m_player.resources.find(type);
+    if (it == m_player.resources.end())
         return false;
-    }
+
+    float cost = amount * it->second.GetBasePrice();
+    if (m_player.money < cost)
+        return false;
+
+    m_player.money -= cost;
+    m_player.totalSpent += cost;
+
+    it->second.SetAmount(it->second.GetAmount() + amount);
+    it->second.SetOwned(true);
+
+    ResourceManager::Instance().Add(type, amount);
+    return true;
 }
 
 bool TycoonGame::SellResource(ResourceType type, float amount)
 {
-    try
-    {
-        auto it = m_player.resources.find(type);
-        if (it == m_player.resources.end() || !it->second.IsOwned())
-            return false;
-
-        if (it->second.GetAmount() < amount)
-            return false;
-
-        float totalEarnings = amount * it->second.GetBasePrice();
-        m_player.money += totalEarnings;
-        m_player.totalEarnings += totalEarnings;
-        it->second.SetAmount(it->second.GetAmount() - amount);
-        return true;
-    }
-    catch (...)
-    {
+    auto it = m_player.resources.find(type);
+    if (it == m_player.resources.end() || !it->second.IsOwned())
         return false;
-    }
+
+    float have = it->second.GetAmount();
+    if (have < amount)
+        return false;
+
+    float earnings = amount * it->second.GetBasePrice();
+    m_player.money += earnings;
+    m_player.totalEarnings += earnings;
+
+    it->second.SetAmount(have - amount);
+    if (it->second.GetAmount() <= 0.0f)
+        it->second.SetOwned(false);
+
+    ResourceManager::Instance().Consume(type, amount);
+    return true;
 }
 
 float TycoonGame::CalculateResourcePrice(ResourceType type) const
@@ -688,20 +670,20 @@ void TycoonGame::RenderMainMenu()
         ImGui::Text("Tycoon Game");
         ImGui::PopStyleColor();
         ImGui::Separator();
-        
+
         ImGui::Text("A business simulation game where you build and manage");
         ImGui::Text("your industrial empire!");
         ImGui::Separator();
-        
+
         ImGui::Text("Version: 1.0.0");
         ImGui::Text("Created with Dear ImGui and DirectX 11");
         ImGui::Separator();
-        
+
         if (ImGui::Button("Close"))
         {
             ImGui::CloseCurrentPopup();
         }
-        
+
         ImGui::EndPopup();
     }
 }
@@ -782,6 +764,18 @@ void TycoonGame::RenderResourcesWindow()
         ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), decimal);
 
         ImGui::Text("$%.2f per", resource.GetBasePrice());
+
+        // if (type == ResourceType::ENERGY)
+        // {
+        //     ImGui::SameLine();
+        //     if (ImGui::Button("Buy 10 Energy"))
+        //     {
+        //         if (!BuyResource(type, 10.0f))
+        //         {
+        //         }
+        //     }
+        // }
+
         ImGui::Separator();
     }
     ImGui::EndChild();
@@ -981,8 +975,7 @@ void TycoonGame::RenderPurchaseBuildingsWindow()
         case BuildingType::DIAMOND_MINE:
             symbol = "[DM]";
             break;
-
-    }
+        }
 
         // Create unique button text with ID
         std::string uniqueButtonText = std::string(symbol) + " " + building->GetName() + " ($" +
@@ -1251,7 +1244,8 @@ static std::map<ResourceType, int> historyCount;
 
 void TycoonGame::RenderStockUnlockButton()
 {
-    if (m_player.hasStocksUnlocked) return;
+    if (m_player.hasStocksUnlocked)
+        return;
 
     bool canUnlock = m_player.reputation >= 40;
     bool canAfford = m_player.money >= GameConstants::STOCK_GRAPH_UNLOCK_PRICE;
@@ -1280,7 +1274,7 @@ void TycoonGame::RenderStockUnlockButton()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
         ImGui::BeginTooltip();
-        
+
         if (!canUnlock)
         {
             ImGui::Text("Gain more reputation to purchase stock graphs!");
@@ -1297,7 +1291,7 @@ void TycoonGame::RenderStockUnlockButton()
             std::string costText = "Costs " + ss.str() + "$";
             ImGui::SeparatorText(costText.c_str());
         }
-        
+
         ImGui::EndTooltip();
     }
 }
@@ -1455,22 +1449,15 @@ void TycoonGame::RenderStockWindow()
     ImGui::End();
 }
 
-// Save/Load Game
 bool TycoonGame::SaveGame(const std::string &filename) const
 {
     try
     {
         std::ofstream file(filename, std::ios::binary);
         if (!file.is_open())
-        {
             return false;
-        }
-
-        // Save game time and state
         file.write(reinterpret_cast<const char *>(&m_gameTime), sizeof(m_gameTime));
         file.write(reinterpret_cast<const char *>(&m_isPaused), sizeof(m_isPaused));
-
-        // Save timers
         file.write(reinterpret_cast<const char *>(&m_economyUpdateTimer), sizeof(m_economyUpdateTimer));
         file.write(reinterpret_cast<const char *>(&m_resourceUpdateTimer), sizeof(m_resourceUpdateTimer));
         file.write(reinterpret_cast<const char *>(&m_reputationUpdateTimer), sizeof(m_reputationUpdateTimer));
@@ -1478,108 +1465,83 @@ bool TycoonGame::SaveGame(const std::string &filename) const
         file.write(reinterpret_cast<const char *>(&m_lastFrameTime), sizeof(m_lastFrameTime));
         file.write(reinterpret_cast<const char *>(&m_fpsUpdateTimer), sizeof(m_fpsUpdateTimer));
         file.write(reinterpret_cast<const char *>(&m_frameCount), sizeof(m_frameCount));
-
-        // Save player data
-        size_t nameLength = m_player.name.length();
-        file.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-        file.write(m_player.name.c_str(), nameLength);
+        size_t nameLen = m_player.name.size();
+        file.write(reinterpret_cast<const char *>(&nameLen), sizeof(nameLen));
+        file.write(m_player.name.c_str(), nameLen);
         file.write(reinterpret_cast<const char *>(&m_player.money), sizeof(m_player.money));
         file.write(reinterpret_cast<const char *>(&m_player.reputation), sizeof(m_player.reputation));
         file.write(reinterpret_cast<const char *>(&m_player.totalEarnings), sizeof(m_player.totalEarnings));
         file.write(reinterpret_cast<const char *>(&m_player.totalSpent), sizeof(m_player.totalSpent));
         file.write(reinterpret_cast<const char *>(&m_player.achievements), sizeof(m_player.achievements));
-
-        // Save resources
-        size_t resourceCount = m_player.resources.size();
-        file.write(reinterpret_cast<const char *>(&resourceCount), sizeof(resourceCount));
-        for (const auto &[type, resource] : m_player.resources)
+        size_t resCount = m_player.resources.size();
+        file.write(reinterpret_cast<const char *>(&resCount), sizeof(resCount));
+        for (auto const &pr : m_player.resources)
         {
-            int resourceType = static_cast<int>(type);
-            file.write(reinterpret_cast<const char *>(&resourceType), sizeof(resourceType));
-
-            nameLength = resource.GetName().length();
-            file.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-            file.write(resource.GetName().c_str(), nameLength);
-
-            float amount = resource.GetAmount();
-            float basePrice = resource.GetBasePrice();
-            bool owned = resource.IsOwned();
-
-            file.write(reinterpret_cast<const char *>(&amount), sizeof(amount));
-            file.write(reinterpret_cast<const char *>(&basePrice), sizeof(basePrice));
+            int type = static_cast<int>(pr.first);
+            file.write(reinterpret_cast<const char *>(&type), sizeof(type));
+            const auto &r = pr.second;
+            nameLen = r.GetName().size();
+            file.write(reinterpret_cast<const char *>(&nameLen), sizeof(nameLen));
+            file.write(r.GetName().c_str(), nameLen);
+            float amt = r.GetAmount();
+            float price = r.GetBasePrice();
+            bool owned = r.IsOwned();
+            file.write(reinterpret_cast<const char *>(&amt), sizeof(amt));
+            file.write(reinterpret_cast<const char *>(&price), sizeof(price));
             file.write(reinterpret_cast<const char *>(&owned), sizeof(owned));
         }
-
-        // Save buildings
-        size_t buildingCount = m_player.buildings.size();
-        file.write(reinterpret_cast<const char *>(&buildingCount), sizeof(buildingCount));
-        for (const auto &building : m_player.buildings)
+        size_t bldCount = m_player.buildings.size();
+        file.write(reinterpret_cast<const char *>(&bldCount), sizeof(bldCount));
+        for (auto const &b : m_player.buildings)
         {
-            if (building)
-            {
-                int buildingType = static_cast<int>(building->GetType());
-                file.write(reinterpret_cast<const char *>(&buildingType), sizeof(buildingType));
-
-                nameLength = building->GetName().length();
-                file.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-                file.write(building->GetName().c_str(), nameLength);
-
-                float cost = building->GetCost();
-                int level = building->GetLevel();
-                bool isOwned = building->IsOwned();
-                bool isOperational = building->IsOperational();
-                float efficiency = building->GetEfficiency();
-                float maintenanceCost = building->GetMaintenanceCost();
-                float requiredReputation = building->GetRequiredReputation();
-                float baseProductionRate = building->GetBaseProductionRate();
-                float upgradeCost = building->GetUpgradeCost();
-
-                file.write(reinterpret_cast<const char *>(&cost), sizeof(cost));
-                file.write(reinterpret_cast<const char *>(&level), sizeof(level));
-                file.write(reinterpret_cast<const char *>(&isOwned), sizeof(isOwned));
-                file.write(reinterpret_cast<const char *>(&isOperational), sizeof(isOperational));
-                file.write(reinterpret_cast<const char *>(&efficiency), sizeof(efficiency));
-                file.write(reinterpret_cast<const char *>(&maintenanceCost), sizeof(maintenanceCost));
-                file.write(reinterpret_cast<const char *>(&requiredReputation), sizeof(requiredReputation));
-                file.write(reinterpret_cast<const char *>(&baseProductionRate), sizeof(baseProductionRate));
-                file.write(reinterpret_cast<const char *>(&upgradeCost), sizeof(upgradeCost));
-            }
-        }
-
-        // Save productions
-        size_t productionCount = m_player.productions.size();
-        file.write(reinterpret_cast<const char *>(&productionCount), sizeof(productionCount));
-        for (const auto &production : m_player.productions)
-        {
-            int productionType = static_cast<int>(production->GetType());
-            file.write(reinterpret_cast<const char *>(&productionType), sizeof(productionType));
-
-            nameLength = production->GetName().length();
-            file.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-            file.write(production->GetName().c_str(), nameLength);
-
-            bool isOwned = production->IsOwned();
-            float currentTime = production->GetTime();
-            bool isInvested = production->IsInvested();
-            float cost = production->GetCost();
-            float requiredReputation = production->GetRequiredReputation();
-            float completionTime = production->GetCompletionTime();
-            float completionAmount = production->GetCompletionAmount();
-
+            int type = static_cast<int>(b->GetType());
+            file.write(reinterpret_cast<const char *>(&type), sizeof(type));
+            nameLen = b->GetName().size();
+            file.write(reinterpret_cast<const char *>(&nameLen), sizeof(nameLen));
+            file.write(b->GetName().c_str(), nameLen);
+            int level = b->GetLevel();
+            bool isOwned = b->IsOwned();
+            bool isOp = b->IsOperational();
+            float eff = b->GetEfficiency();
+            float maint = b->GetMaintenanceCost();
+            int reqRep = b->GetRequiredReputation();
+            float baseRate = b->GetBaseProductionRate();
+            float upgrade = b->GetUpgradeCost();
+            file.write(reinterpret_cast<const char *>(&level), sizeof(level));
             file.write(reinterpret_cast<const char *>(&isOwned), sizeof(isOwned));
-            file.write(reinterpret_cast<const char *>(&currentTime), sizeof(currentTime));
-            file.write(reinterpret_cast<const char *>(&isInvested), sizeof(isInvested));
-            file.write(reinterpret_cast<const char *>(&cost), sizeof(cost));
-            file.write(reinterpret_cast<const char *>(&requiredReputation), sizeof(requiredReputation));
-            file.write(reinterpret_cast<const char *>(&completionTime), sizeof(completionTime));
-            file.write(reinterpret_cast<const char *>(&completionAmount), sizeof(completionAmount));
+            file.write(reinterpret_cast<const char *>(&isOp), sizeof(isOp));
+            file.write(reinterpret_cast<const char *>(&eff), sizeof(eff));
+            file.write(reinterpret_cast<const char *>(&maint), sizeof(maint));
+            file.write(reinterpret_cast<const char *>(&reqRep), sizeof(reqRep));
+            file.write(reinterpret_cast<const char *>(&baseRate), sizeof(baseRate));
+            file.write(reinterpret_cast<const char *>(&upgrade), sizeof(upgrade));
         }
-
-        // Save has stock graph
-        size_t hasStocksUnlocked = m_player.hasStocksUnlocked ? 1:0;
-        file.write(reinterpret_cast<const char*>(&hasStocksUnlocked), sizeof(hasStocksUnlocked));
-
-
+        size_t prodCount = m_player.productions.size();
+        file.write(reinterpret_cast<const char *>(&prodCount), sizeof(prodCount));
+        for (auto const &p : m_player.productions)
+        {
+            int type = static_cast<int>(p->GetType());
+            file.write(reinterpret_cast<const char *>(&type), sizeof(type));
+            nameLen = p->GetName().size();
+            file.write(reinterpret_cast<const char *>(&nameLen), sizeof(nameLen));
+            file.write(p->GetName().c_str(), nameLen);
+            bool isOwned = p->IsOwned();
+            float time = p->GetTime();
+            bool isInv = p->IsInvested();
+            float cost = p->GetCost();
+            float reqRep = p->GetRequiredReputation();
+            float compTime = p->GetCompletionTime();
+            float compAmt = p->GetCompletionAmount();
+            file.write(reinterpret_cast<const char *>(&isOwned), sizeof(isOwned));
+            file.write(reinterpret_cast<const char *>(&time), sizeof(time));
+            file.write(reinterpret_cast<const char *>(&isInv), sizeof(isInv));
+            file.write(reinterpret_cast<const char *>(&cost), sizeof(cost));
+            file.write(reinterpret_cast<const char *>(&reqRep), sizeof(reqRep));
+            file.write(reinterpret_cast<const char *>(&compTime), sizeof(compTime));
+            file.write(reinterpret_cast<const char *>(&compAmt), sizeof(compAmt));
+        }
+        size_t stocks = m_player.hasStocksUnlocked ? 1u : 0u;
+        file.write(reinterpret_cast<const char *>(&stocks), sizeof(stocks));
         return true;
     }
     catch (...)
@@ -1594,15 +1556,9 @@ bool TycoonGame::LoadGame(const std::string &filename)
     {
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open())
-        {
             return false;
-        }
-
-        // Load game time and state
         file.read(reinterpret_cast<char *>(&m_gameTime), sizeof(m_gameTime));
         file.read(reinterpret_cast<char *>(&m_isPaused), sizeof(m_isPaused));
-
-        // Load timers
         file.read(reinterpret_cast<char *>(&m_economyUpdateTimer), sizeof(m_economyUpdateTimer));
         file.read(reinterpret_cast<char *>(&m_resourceUpdateTimer), sizeof(m_resourceUpdateTimer));
         file.read(reinterpret_cast<char *>(&m_reputationUpdateTimer), sizeof(m_reputationUpdateTimer));
@@ -1610,143 +1566,109 @@ bool TycoonGame::LoadGame(const std::string &filename)
         file.read(reinterpret_cast<char *>(&m_lastFrameTime), sizeof(m_lastFrameTime));
         file.read(reinterpret_cast<char *>(&m_fpsUpdateTimer), sizeof(m_fpsUpdateTimer));
         file.read(reinterpret_cast<char *>(&m_frameCount), sizeof(m_frameCount));
-
-        // Load player data
-        size_t nameLength;
-        file.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-        m_player.name.resize(nameLength);
-        file.read(&m_player.name[0], nameLength);
+        size_t nameLen;
+        file.read(reinterpret_cast<char *>(&nameLen), sizeof(nameLen));
+        m_player.name.resize(nameLen);
+        file.read(&m_player.name[0], nameLen);
         file.read(reinterpret_cast<char *>(&m_player.money), sizeof(m_player.money));
         file.read(reinterpret_cast<char *>(&m_player.reputation), sizeof(m_player.reputation));
         file.read(reinterpret_cast<char *>(&m_player.totalEarnings), sizeof(m_player.totalEarnings));
         file.read(reinterpret_cast<char *>(&m_player.totalSpent), sizeof(m_player.totalSpent));
         file.read(reinterpret_cast<char *>(&m_player.achievements), sizeof(m_player.achievements));
-
-        // Load resources
-        size_t resourceCount;
-        file.read(reinterpret_cast<char *>(&resourceCount), sizeof(resourceCount));
+        size_t resCount;
+        file.read(reinterpret_cast<char *>(&resCount), sizeof(resCount));
         m_player.resources.clear();
-        for (size_t i = 0; i < resourceCount; ++i)
+        for (size_t i = 0; i < resCount; ++i)
         {
-            int resourceType;
-            file.read(reinterpret_cast<char *>(&resourceType), sizeof(resourceType));
-
-            file.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-            std::string name(nameLength, '\0');
-            file.read(&name[0], nameLength);
-
-            float amount, basePrice;
+            int typeInt;
+            file.read(reinterpret_cast<char *>(&typeInt), sizeof(typeInt));
+            ResourceType type = static_cast<ResourceType>(typeInt);
+            file.read(reinterpret_cast<char *>(&nameLen), sizeof(nameLen));
+            std::string nm(nameLen, '\0');
+            file.read(&nm[0], nameLen);
+            float amt, price;
             bool owned;
-            file.read(reinterpret_cast<char *>(&amount), sizeof(amount));
-            file.read(reinterpret_cast<char *>(&basePrice), sizeof(basePrice));
+            file.read(reinterpret_cast<char *>(&amt), sizeof(amt));
+            file.read(reinterpret_cast<char *>(&price), sizeof(price));
             file.read(reinterpret_cast<char *>(&owned), sizeof(owned));
-
-            m_player.resources[static_cast<ResourceType>(resourceType)] =
-                Resource(static_cast<ResourceType>(resourceType), name, amount, basePrice, owned);
+            m_player.resources[type] = Resource(type, nm, amt, price, owned);
         }
-
-        // Load buildings
-        size_t buildingCount;
-        file.read(reinterpret_cast<char *>(&buildingCount), sizeof(buildingCount));
-        m_player.buildings.clear();
-        for (size_t i = 0; i < buildingCount; ++i)
+        ResourceManager &rm = ResourceManager::Instance();
+        for (auto &p : m_player.resources)
         {
-            int buildingType;
-            file.read(reinterpret_cast<char *>(&buildingType), sizeof(buildingType));
-
-            file.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-            std::string name(nameLength, '\0');
-            file.read(&name[0], nameLength);
-
-            float cost;
+            float old = rm.Get(p.first);
+            if (old > 0.0f)
+                rm.Consume(p.first, old);
+            rm.Add(p.first, p.second.GetAmount());
+        }
+        size_t bldCount;
+        file.read(reinterpret_cast<char *>(&bldCount), sizeof(bldCount));
+        m_player.buildings.clear();
+        for (size_t i = 0; i < bldCount; ++i)
+        {
+            int typeInt;
+            file.read(reinterpret_cast<char *>(&typeInt), sizeof(typeInt));
+            BuildingType btype = static_cast<BuildingType>(typeInt);
+            file.read(reinterpret_cast<char *>(&nameLen), sizeof(nameLen));
+            file.seekg(nameLen, std::ios::cur);
             int level;
-            bool isOwned, isOperational;
-            float efficiency;
-            float maintenanceCost;
-            float requiredReputation;
-            float baseProductionRate;
-            float upgradeCost;
-
-            file.read(reinterpret_cast<char *>(&cost), sizeof(cost));
+            bool isOwned, isOp;
+            float eff, maint, baseRate, upgrade;
+            int reqRep;
             file.read(reinterpret_cast<char *>(&level), sizeof(level));
             file.read(reinterpret_cast<char *>(&isOwned), sizeof(isOwned));
-            file.read(reinterpret_cast<char *>(&isOperational), sizeof(isOperational));
-            file.read(reinterpret_cast<char *>(&efficiency), sizeof(efficiency));
-            file.read(reinterpret_cast<char *>(&maintenanceCost), sizeof(maintenanceCost));
-            file.read(reinterpret_cast<char *>(&requiredReputation), sizeof(requiredReputation));
-            file.read(reinterpret_cast<char *>(&baseProductionRate), sizeof(baseProductionRate));
-            file.read(reinterpret_cast<char *>(&upgradeCost), sizeof(upgradeCost));
-
-            auto building = BuildingFactory::CreateBuilding(static_cast<BuildingType>(buildingType));
-            if (building)
-            {
-                building->SetLevel(level);
-                building->SetOwned(isOwned);
-                building->SetOperational(isOperational);
-                building->SetEfficiency(efficiency);
-                building->SetMaintenanceCost(maintenanceCost);
-                building->SetRequiredReputation(requiredReputation);
-                building->SetBaseProductionRate(baseProductionRate);
-                building->SetUpgradeCost(upgradeCost);
-                m_player.buildings.push_back(std::move(building));
-            }
+            file.read(reinterpret_cast<char *>(&isOp), sizeof(isOp));
+            file.read(reinterpret_cast<char *>(&eff), sizeof(eff));
+            file.read(reinterpret_cast<char *>(&maint), sizeof(maint));
+            file.read(reinterpret_cast<char *>(&reqRep), sizeof(reqRep));
+            file.read(reinterpret_cast<char *>(&baseRate), sizeof(baseRate));
+            file.read(reinterpret_cast<char *>(&upgrade), sizeof(upgrade));
+            auto bld = BuildingFactory::CreateBuilding(btype);
+            bld->SetLevel(level);
+            bld->SetOwned(isOwned);
+            bld->SetOperational(isOp);
+            bld->SetEfficiency(eff);
+            bld->SetMaintenanceCost(maint);
+            bld->SetRequiredReputation(reqRep);
+            bld->SetBaseProductionRate(baseRate);
+            bld->SetUpgradeCost(upgrade);
+            m_player.buildings.push_back(std::move(bld));
         }
-
-        // Load productions
         InitializeProductionTypes();
-        size_t productionCount;
-        file.read(reinterpret_cast<char *>(&productionCount), sizeof(productionCount));
-        for (size_t i = 0; i < productionCount; ++i)
+        size_t prodCount;
+        file.read(reinterpret_cast<char *>(&prodCount), sizeof(prodCount));
+        for (size_t i = 0; i < prodCount; ++i)
         {
-            int productionType;
-            file.read(reinterpret_cast<char *>(&productionType), sizeof(productionType));
-
-            file.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-            std::string name(nameLength, '\0');
-            file.read(&name[0], nameLength);
-            ;
-
+            int typeInt;
+            file.read(reinterpret_cast<char *>(&typeInt), sizeof(typeInt));
+            file.read(reinterpret_cast<char *>(&nameLen), sizeof(nameLen));
+            std::string nm(nameLen, '\0');
+            file.read(&nm[0], nameLen);
             bool isOwned;
-            float currentTime;
-            bool isInvested;
-            float cost;
-            float requiredReputation;
-            float completionTime;
-            float completionAmount;
-
+            float time;
+            bool isInv;
+            float cost, reqRep, compTime, compAmt;
             file.read(reinterpret_cast<char *>(&isOwned), sizeof(isOwned));
-            file.read(reinterpret_cast<char *>(&currentTime), sizeof(currentTime));
-            file.read(reinterpret_cast<char *>(&isInvested), sizeof(isInvested));
+            file.read(reinterpret_cast<char *>(&time), sizeof(time));
+            file.read(reinterpret_cast<char *>(&isInv), sizeof(isInv));
             file.read(reinterpret_cast<char *>(&cost), sizeof(cost));
-            file.read(reinterpret_cast<char *>(&requiredReputation), sizeof(requiredReputation));
-            file.read(reinterpret_cast<char *>(&completionTime), sizeof(completionTime));
-            file.read(reinterpret_cast<char *>(&completionAmount), sizeof(completionAmount));
-
-            auto it = std::find_if(
-                m_player.productions.begin(),
-                m_player.productions.end(),
-                [&name](const auto &existing)
-                {
-                    return existing->GetName() == name;
-                });
-
-            if (it != m_player.productions.end())
-            {
-                (*it)->SetOwned(isOwned);
-                (*it)->SetTime(currentTime);
-                (*it)->SetIsInvested(isInvested);
-                (*it)->SetCost(cost);
-                (*it)->SetRequiredReputation(requiredReputation);
-                (*it)->SetCompletionTime(completionTime);
-                (*it)->SetCompletionAmount(completionAmount);
-            }
+            file.read(reinterpret_cast<char *>(&reqRep), sizeof(reqRep));
+            file.read(reinterpret_cast<char *>(&compTime), sizeof(compTime));
+            file.read(reinterpret_cast<char *>(&compAmt), sizeof(compAmt));
+            auto it = std::find_if(m_player.productions.begin(), m_player.productions.end(),
+                                   [&](auto const &p)
+                                   { return p->GetName() == nm; });
+            (*it)->SetOwned(isOwned);
+            (*it)->SetTime(time);
+            (*it)->SetIsInvested(isInv);
+            (*it)->SetCost(cost);
+            (*it)->SetRequiredReputation(reqRep);
+            (*it)->SetCompletionTime(compTime);
+            (*it)->SetCompletionAmount(compAmt);
         }
-
-        // Load has stock graphs
-        size_t hasStocksUnlocked;
-        file.read(reinterpret_cast<char*>(&hasStocksUnlocked), sizeof(hasStocksUnlocked));
-        m_player.hasStocksUnlocked = (hasStocksUnlocked==1);
-
+        size_t stocks;
+        file.read(reinterpret_cast<char *>(&stocks), sizeof(stocks));
+        m_player.hasStocksUnlocked = (stocks == 1);
         return true;
     }
     catch (...)

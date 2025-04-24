@@ -7,6 +7,6 @@ public:
     Woodcutter();
 
     // Override virtual methods to provide specific behavior
-    void UpdateEfficiency() override;
+    void UpdateEfficiency(float deltaTime) override;
     float CalculateProduction(float deltaTime) const override;
 };

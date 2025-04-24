@@ -1,58 +1,36 @@
 #include "ResearchLab.h"
 #include "../GameConstants.h"
+#include "../ResourceManager.h"
 
 ResearchLab::ResearchLab()
-    : Building(BuildingType::RESEARCH_LAB,
-               "Research Lab",
-               2000.0f, // cost
-               0.1f,    // base production rate
-               {Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false),
-                Resource(ResourceType::CRYSTAL, "Crystal", 0.0f, GameConstants::CRYSTAL_BASE_PRICE, false)}, // input resources
-               {},                                                                                           // no direct resource output, instead provides global production bonus
-               GameConstants::RESEARCH_LAB_MAINTENANCE,                                                      // maintenance cost
-               1000.0f,                                                                                      // upgrade cost
-               50)                                                                                           // required reputation
+    : Building(
+          BuildingType::RESEARCH_LAB,
+          "Research Lab",
+          2000.0f,
+          0.1f,
+          {Resource(ResourceType::ENERGY, "Energy", 0.0f, GameConstants::ENERGY_BASE_PRICE, false),
+           Resource(ResourceType::CRYSTAL, "Crystal", 0.0f, GameConstants::CRYSTAL_BASE_PRICE, false)},
+          {}, // no direct outputs
+          GameConstants::RESEARCH_LAB_MAINTENANCE,
+          1000.0f,
+          50)
 {
 }
 
-void ResearchLab::UpdateEfficiency()
+void ResearchLab::UpdateEfficiency(float deltaTime)
 {
-    // First use the base class efficiency calculation
-    Building::UpdateEfficiency();
+    Building::UpdateEfficiency(deltaTime);
 
-    // Research labs have additional efficiency requirements
-    bool hasEnergy = false;
-    bool hasCrystal = false;
-    for (const auto &resource : GetInputResources())
-    {
-        if (resource.GetType() == ResourceType::ENERGY && resource.GetAmount() > 0)
-        {
-            hasEnergy = true;
-        }
-        else if (resource.GetType() == ResourceType::CRYSTAL && resource.GetAmount() > 0)
-        {
-            hasCrystal = true;
-        }
-    }
-
-    // Apply additional efficiency factors based on resource availability
-    float additionalEfficiency = 1.0f;
-    if (!hasEnergy && !hasCrystal)
-    {
-        additionalEfficiency = 0.1f; // Very low efficiency without any resources
-    }
-    else if (!hasEnergy || !hasCrystal)
-    {
-        additionalEfficiency = 0.3f; // Partial efficiency with only one resource
-    }
-
-    // Combine base efficiency with additional factors
-    SetEfficiency(GetEfficiency() * additionalEfficiency);
+    auto &rm = ResourceManager::Instance();
+    bool e = rm.Get(ResourceType::ENERGY) > 0.0f;
+    bool c = rm.Get(ResourceType::CRYSTAL) > 0.0f;
+    float factor = (!e && !c)   ? 0.1f
+                   : (!e || !c) ? 0.3f
+                                : 1.0f;
+    SetEfficiency(GetEfficiency() * factor);
 }
 
-float ResearchLab::CalculateProduction(float deltaTime) const
+float ResearchLab::CalculateProduction(float /*dt*/) const
 {
-    // Research labs don't produce resources directly
-    // Instead, they provide a global production bonus through the CalculateProductionMultiplier method
-    return 0.0f;
+    return 0.0f; // no direct resource output
 }

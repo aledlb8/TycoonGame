@@ -14,11 +14,11 @@ Woodcutter::Woodcutter()
 {
 }
 
-void Woodcutter::UpdateEfficiency()
+void Woodcutter::UpdateEfficiency(float deltaTime)
 {
     // Woodcutters use the base class efficiency calculation
     // They have no input resources, so they'll always operate at full efficiency
-    Building::UpdateEfficiency();
+    Building::UpdateEfficiency(deltaTime);
 }
 
 float Woodcutter::CalculateProduction(float deltaTime) const

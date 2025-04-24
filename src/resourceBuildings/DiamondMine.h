@@ -7,6 +7,6 @@ public:
     DiamondMine();
     virtual ~DiamondMine() = default;
 
-    virtual void UpdateEfficiency() override;
+    virtual void UpdateEfficiency(float deltaTime) override;
     virtual float CalculateProduction(float deltaTime) const override;
 }; 

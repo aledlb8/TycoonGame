@@ -181,6 +181,7 @@
     <ClInclude Include="src\GameConstants.h" />
     <ClInclude Include="src\Production.h" />
     <ClInclude Include="src\Resource.h" />
+    <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\TycoonGame.h" />
   </ItemGroup>
   <ItemGroup>

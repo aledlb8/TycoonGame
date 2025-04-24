@@ -1,5 +1,6 @@
 #include "Building.h"
 #include <algorithm>
+#include "ResourceManager.h"
 
 // Constants for building mechanics
 const int MAX_LEVEL = 5;
@@ -23,24 +24,28 @@ void Building::Update(float deltaTime)
     if (!m_isOperational || !m_isOwned)
         return;
 
-    UpdateEfficiency();
+    // 1) compute & smooth efficiency
+    UpdateEfficiency(deltaTime);
+
+    // 2) produce/consume
     float production = CalculateProduction(deltaTime);
 
-    // Process input resources
-    for (auto &resource : m_inputResources)
+    // consume fuel
+    for (auto const &req : m_inputResources)
     {
-        float requiredAmount = production * resource.GetProductionRate();
-        if (resource.GetAmount() >= requiredAmount)
+        float needed = production * req.GetProductionRate() * FUEL_CONSUMPTION_FACTOR;
+        if (!ResourceManager::Instance().Consume(req.GetType(), needed))
         {
-            resource.SetAmount(resource.GetAmount() - requiredAmount);
+            production = 0.0f;
+            break;
         }
     }
 
-    // Generate output resources
-    for (auto &resource : m_outputResources)
+    // deposit outputs
+    for (auto const &out : m_outputResources)
     {
-        float generatedAmount = production * resource.GetProductionRate();
-        resource.SetAmount(resource.GetAmount() + generatedAmount);
+        float amountOut = production * out.GetProductionRate();
+        ResourceManager::Instance().Add(out.GetType(), amountOut);
     }
 }
 
@@ -56,26 +61,48 @@ bool Building::Upgrade()
     return true;
 }
 
-void Building::UpdateEfficiency()
+void Building::UpdateEfficiency(float deltaTime)
 {
-    // Calculate efficiency based on resource availability and amounts
-    float totalEfficiency = 0.0f;
-    int resourceCount = 0;
-
-    for (const auto &resource : m_inputResources)
+    // If no inputs, full efficiency
+    if (m_inputResources.empty())
     {
-        resourceCount++;
-        // Calculate how much of the required resource we have
-        float requiredAmount = m_baseProductionRate * resource.GetProductionRate();
-        if (requiredAmount > 0)
-        {
-            float resourceEfficiency = std::min(resource.GetAmount() / requiredAmount, 1.0f);
-            totalEfficiency += resourceEfficiency;
-        }
+        m_efficiency = 1.0f;
+        return;
     }
 
-    // Average the efficiency across all required resources
-    m_efficiency = resourceCount > 0 ? totalEfficiency / resourceCount : 1.0f;
+    auto &rm = ResourceManager::Instance();
+    float totalEff = 0.0f;
+    int realInputs = 0;
+
+    // compute “raw” based purely on available fuel
+    for (auto const &req : m_inputResources)
+    {
+        float rate = req.GetProductionRate();
+        if (rate <= 0.0f)
+            continue;
+
+        float needPerSec = m_baseProductionRate * rate * FUEL_CONSUMPTION_FACTOR;
+        float avail = rm.Get(req.GetType());
+        float eff = std::min(avail / needPerSec, 1.0f);
+
+        totalEff += eff;
+        realInputs += 1;
+    }
+
+    float rawEff = realInputs > 0
+                       ? (totalEff / realInputs)
+                       : 1.0f;
+
+    // **Smooth**: if rawEff >= current, snap up; if rawEff < current, decay slowly
+    if (rawEff >= m_efficiency)
+    {
+        m_efficiency = rawEff;
+    }
+    else
+    {
+        float drop = Building::EFFICIENCY_DECAY_RATE * deltaTime;
+        m_efficiency = std::max(rawEff, m_efficiency - drop);
+    }
 }
 
 float Building::CalculateProduction(float deltaTime) const

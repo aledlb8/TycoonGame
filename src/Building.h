@@ -57,8 +57,14 @@ public:
     // Virtual methods that can be overridden by specific building types
     virtual void Update(float deltaTime);
     virtual bool Upgrade();
-    virtual void UpdateEfficiency();
+    virtual void UpdateEfficiency(float deltaTime);
     virtual float CalculateProduction(float deltaTime) const;
+
+    // how fast we lose efficiency when fuel == 0 (per second)
+    static constexpr float EFFICIENCY_DECAY_RATE = 0.03f; // 3% per second
+
+    // globally throttle fuel consumption
+    static constexpr float FUEL_CONSUMPTION_FACTOR = 0.1f; // use only .1 the resources
 
 protected:
     BuildingType m_type;
