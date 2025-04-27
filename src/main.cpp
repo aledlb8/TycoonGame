@@ -15,8 +15,6 @@
 #include <mferror.h>
 #include <shlwapi.h>
 #include "TycoonGame.h"
-#include "TextureManager.h"
-#include <cstdio>
 
 // Link with DirectX libraries
 #pragma comment(lib, "d3d11.lib")
@@ -49,29 +47,9 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// Function to create and attach a console window
-void CreateConsole() {
-    AllocConsole();
-    FILE* fp;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-    freopen_s(&fp, "CONIN$", "r", stdin);
-    SetConsoleTitle(L"Tycoon Game Console");
-}
-
 // Main code
-#ifdef _CONSOLE
-int main(int argc, char* argv[])
-{
-    return WinMain(GetModuleHandle(NULL), NULL, GetCommandLineA(), SW_SHOWDEFAULT);
-}
-#endif
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    CreateConsole();
-    printf("Starting Tycoon Game...\n");
-    
     try
     {
         // Create application window
@@ -81,14 +59,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // Initialize Direct3D
         if (!CreateDeviceD3D(hwnd))
-        {
-            CleanupDeviceD3D();
-            ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
-            return 1;
-        }
-
-        // Initialize TextureManager
-        if (!TextureManager::GetInstance().Initialize(g_pd3dDevice, g_pd3dDeviceContext))
         {
             CleanupDeviceD3D();
             ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
@@ -106,13 +76,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        // Disable ALL debug features
-        io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;  // Disable viewports
-        io.ConfigDebugIsDebuggerPresent = false;
-        io.ConfigDebugBeginReturnValueOnce = false;
-        io.ConfigDebugBeginReturnValueLoop = false;
-        io.ConfigWindowsResizeFromEdges = false;  // Disable resize from edges
-        
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
 
@@ -203,9 +166,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
 
-        // Cleanup TextureManager
-        TextureManager::GetInstance().Shutdown();
-
         CleanupDeviceD3D();
         ::DestroyWindow(hwnd);
         ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
@@ -214,7 +174,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     catch (const std::exception &e)
     {
-        fprintf(stderr, "Error: %s\n", e.what());
+        MessageBoxA(nullptr, e.what(), "Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     catch (...)

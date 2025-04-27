@@ -7,7 +7,6 @@
 #include "Production.h"
 #include "Building.h"
 #include "GameConstants.h"
-#include "Sprite.h"
 
 
 // Player structure
@@ -78,16 +77,10 @@ private:
     int m_frameCount;
     float m_fpsUpdateTimer;
 
-    // Sprites
-    std::map<BuildingType, Sprite> m_buildingSprites;
-    std::map<ResourceType, Sprite> m_resourceSprites;
-    Sprite m_backgroundSprite;
-
     // Helper functions
     void InitializeResources();
     void InitializeBuildingTypes();
     void InitializeProductionTypes();
-    void InitializeSprites();
     float CalculateResourcePrice(ResourceType type) const;
     float CalculateProductionMultiplier() const;
 

@@ -38,4 +38,3 @@
 *.dat
 *.pdb
 /.vscode
-/vcpkg_installed

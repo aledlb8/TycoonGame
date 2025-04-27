@@ -43,4 +43,3 @@ A resource management and business simulation game where players build and manag
 ## License
 
 ![image](https://github.com/user-attachments/assets/aee54590-bd64-4c0c-acb8-302f0524a2c8)
-This project is licensed under the MIT License - see the LICENSE file for details.
