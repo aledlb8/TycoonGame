@@ -29,22 +29,8 @@ A resource management and business simulation game where players build and manag
 ## Game Controls
 
 - Left-click to interact with UI elements
-- ESC to pause the game
 - Mouse wheel to scroll through lists
 
-## Project Structure
-
-```
-Tycoon/
-├── src/                    # Source code
-│   ├── core/              # Core game logic
-│   ├── buildings/         # Building implementations
-│   ├── resources/         # Resource implementations
-│   ├── ui/               # UI components
-│   └── utils/            # Utility functions
-├── lib/                   # Third-party libraries
-└── assets/               # Game assets
-```
 
 ## Contributing
 
