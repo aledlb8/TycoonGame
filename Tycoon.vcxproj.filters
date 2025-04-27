@@ -81,6 +81,15 @@
     <ClCompile Include="src\productionBuildings\Jewelry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\resourceBuildings\DiamondMine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\imconfig.h">
@@ -152,8 +161,59 @@
     <ClInclude Include="src\productionBuildings\Jewelry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\resourceBuildings\DiamondMine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Sprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Font Include="lib\HackNerdFont.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\buildings\mine.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\buildings\power_plant.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\buildings\research_plant.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\buildings\woodcutter.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\crystal.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\diamond.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\energy.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\gold.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\iron.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\stone.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\resources\wood.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vcpkg.json" />
+    <None Include="vcpkg-configuration.json" />
   </ItemGroup>
 </Project>

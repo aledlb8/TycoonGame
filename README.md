@@ -1,3 +1,60 @@
-Tycoon Game
+# Tycoon Game
+
+A resource management and business simulation game where players build and manage their industrial empire.
+
+## Features
+
+- Resource gathering and management
+- Building construction and upgrades
+- Production chains and manufacturing
+- Economy simulation with supply and demand
+- Save/Load game functionality
+- Modern UI using Dear ImGui
+
+## Building the Project
+
+### Prerequisites
+
+- Visual Studio 2019 or later
+- DirectX 11 SDK
+- Windows SDK
+
+### Build Steps
+
+1. Clone the repository
+2. Open `Tycoon.sln` in Visual Studio
+3. Build the solution (F7 or Build > Build Solution)
+4. Run the game (F5 or Debug > Start Debugging)
+
+## Game Controls
+
+- Left-click to interact with UI elements
+- ESC to pause the game
+- Mouse wheel to scroll through lists
+
+## Project Structure
+
+```
+Tycoon/
+├── src/                    # Source code
+│   ├── core/              # Core game logic
+│   ├── buildings/         # Building implementations
+│   ├── resources/         # Resource implementations
+│   ├── ui/               # UI components
+│   └── utils/            # Utility functions
+├── lib/                   # Third-party libraries
+└── assets/               # Game assets
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
 
 ![image](https://github.com/user-attachments/assets/aee54590-bd64-4c0c-acb8-302f0524a2c8)
+This project is licensed under the MIT License - see the LICENSE file for details.
